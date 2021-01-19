@@ -31,11 +31,11 @@ library(pdftools)
 
 # Load data
 data_rt <- read.csv("sample_data.csv")
-# Tidying data
-data_subset <- select(data_rt, correct, counter, cue, response_time, setsize, total_correct)
-# Converting correct to a factor
-data_subset$correct <- as.factor(data_subset$correct)
 
+# Converting correct to a factor
+data_rt$correct <- as.factor(data_rt$correct)
+
+# This dataframe would be useful to set plot
 df_rect <-
   tibble(
     xmin = c(-Inf, 400, 2100),
@@ -44,8 +44,8 @@ df_rect <-
     ymax = c(Inf, Inf, Inf)
   )
 
-
-data_rt_iqr <- data_subset %>%
+# Getting IQR for the dataset
+data_rt_iqr <- data_rt %>%
   group_by(correct) %>%
   mutate(
     median = median(response_time),
@@ -55,10 +55,11 @@ data_rt_iqr <- data_subset %>%
   ) %>%
   ungroup() %>%
   mutate(correct_num = as.numeric(fct_rev(correct)))
+
 # Replacing higher number by another so that distribution plots don't touch
 data_rt_iqr$correct_num[data_rt_iqr$correct_num == 2] <- 5
 
-# The viz part
+# The viz part where we set our theme
 theme_set(theme_minimal(base_size = 15, base_family = "Neutraface Slab Display TT Bold"))
 theme_update(
   panel.grid.major = element_line(color = "grey92", size = .4),
@@ -82,13 +83,12 @@ theme_update(
   plot.caption.position = "plot",
   plot.margin = margin(rep(20, 4))
 )
-pal <- c("red", "#006400")
+pal <- c("red", "#006400") # change color palette here
 
-# raincloudplot
-df_peng_iqr <- data_rt_iqr
+# raincloud and barcode plots
 
-rain <-
-  ggplot(df_peng_iqr, aes(response_time, correct_num - .2)) +
+rt_viz <-
+  ggplot(data_rt_iqr, aes(response_time, correct_num - .2)) +
 
   geom_boxplot(
     aes(
@@ -159,7 +159,7 @@ rain <-
     .width = c(0, 1)
   ) +
   geom_text(
-    data = df_peng_iqr %>%
+    data = data_rt_iqr %>%
       group_by(correct, correct_num) %>%
       summarize(m = unique(median)),
     aes(
@@ -173,7 +173,7 @@ rain <-
     size = 5
   ) +
   geom_text(
-    data = df_peng_iqr %>%
+    data = data_rt_iqr %>%
       group_by(correct, correct_num) %>%
       summarize(n = unique(n), max = max(response_time, na.rm = T)),
     aes(
